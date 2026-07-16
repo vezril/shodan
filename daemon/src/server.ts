@@ -6,6 +6,8 @@ import {
   type ServerResponse,
 } from "node:http";
 import type { ServerConfig } from "./config.js";
+import type { StreamMessage } from "./contract.js";
+import type { ReconAdapter } from "./recon/adapter.js";
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
@@ -29,10 +31,17 @@ function isAuthorized(req: IncomingMessage, token: string): boolean {
   return presented.length === expected.length && timingSafeEqual(presented, expected);
 }
 
-// Server-Sent Events stream. The recon snapshot-on-connect and incremental
-// deltas are wired in tasks 1.4 / 2.3; here the endpoint just establishes the
-// stream and keeps it alive so clients can subscribe.
-function openSseStream(req: IncomingMessage, res: ServerResponse): void {
+function writeSse(res: ServerResponse, message: StreamMessage): void {
+  res.write(`data: ${JSON.stringify(message)}\n\n`);
+}
+
+// Live recon stream: send the snapshot on connect, then forward the adapter's
+// incremental deltas. Unsubscribe + clear the heartbeat when the client leaves.
+function openSseStream(
+  req: IncomingMessage,
+  res: ServerResponse,
+  adapter: ReconAdapter,
+): void {
   res.writeHead(200, {
     "content-type": "text/event-stream",
     "cache-control": "no-cache, no-transform",
@@ -40,17 +49,24 @@ function openSseStream(req: IncomingMessage, res: ServerResponse): void {
   });
   res.write(": connected\n\n");
 
+  // Snapshot first, then deltas (recon-dashboard "snapshot on connect").
+  writeSse(res, adapter.snapshot());
+  const unsubscribe = adapter.subscribe((event) => writeSse(res, event));
+
   const heartbeat = setInterval(() => {
     res.write(": heartbeat\n\n");
   }, 15_000);
   heartbeat.unref?.();
 
-  const close = (): void => clearInterval(heartbeat);
+  const close = (): void => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  };
   req.on("close", close);
   res.on("close", close);
 }
 
-export function createDaemonServer(config: ServerConfig): Server {
+export function createDaemonServer(config: ServerConfig, adapter: ReconAdapter): Server {
   return createServer((req, res) => {
     // On a wider bind, every request must present the token.
     if (config.requireToken && !(config.token && isAuthorized(req, config.token))) {
@@ -66,7 +82,7 @@ export function createDaemonServer(config: ServerConfig): Server {
     }
 
     if (req.method === "GET" && pathname === "/api/stream") {
-      openSseStream(req, res);
+      openSseStream(req, res, adapter);
       return;
     }
 
