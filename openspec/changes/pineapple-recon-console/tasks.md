@@ -13,7 +13,7 @@
 
 ## 3. Recon dashboard (UI)
 
-- [ ] 3.1 Live AP inventory table (SSID, BSSID, channel, band, encryption, signal, #clients)
+- [x] 3.1 Live AP inventory table (SSID, BSSID, channel, band, encryption, signal, #clients)
 - [ ] 3.2 In-place updates from the stream (no dup rows, no manual refresh)
 - [ ] 3.3 AP drill-in: associated/probing clients with live updates
 - [ ] 3.4 Visual in-scope vs out-of-scope distinction

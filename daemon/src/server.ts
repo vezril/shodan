@@ -6,7 +6,7 @@ import {
   type ServerResponse,
 } from "node:http";
 import type { ServerConfig } from "./config.js";
-import type { StreamMessage } from "./contract.js";
+import type { StreamMessage } from "@shodan/contract";
 import type { ReconAdapter } from "./recon/adapter.js";
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
