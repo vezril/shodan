@@ -1,8 +1,9 @@
-// Daemon server configuration.
+// Daemon server configuration and the loopback/wider-bind guard.
 //
-// Task 1.2 binds to loopback only. The opt-in wider bind (routable interface +
-// required auth token) is task 1.3, which will extend this module — hence the
-// host is derived here rather than hard-coded at the listen call.
+// Loopback is the default and needs no auth (the tunnel/loopback is the
+// boundary — design D9). Binding to any routable interface is permitted ONLY
+// with BOTH an explicit opt-in AND a configured auth token; otherwise the
+// daemon refuses to start. There is never an unauthenticated routable listener.
 
 export const LOOPBACK_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4317;
@@ -10,6 +11,22 @@ export const DEFAULT_PORT = 4317;
 export interface ServerConfig {
   host: string;
   port: number;
+  /** True when bound to a routable interface — every request must present the token. */
+  requireToken: boolean;
+  /** The bearer token; set when a wider bind is configured, otherwise null. */
+  token: string | null;
+}
+
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
+
+export function isLoopbackHost(host: string): boolean {
+  return LOOPBACK_HOSTS.has(host) || host.startsWith("127.");
+}
+
+function isOptIn(value: string | undefined): boolean {
+  if (!value) return false;
+  const v = value.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -17,6 +34,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error(`Invalid SHODAN_PORT: ${env.SHODAN_PORT ?? ""}`);
   }
-  // Loopback only in this task; task 1.3 introduces the guarded wider bind.
-  return { host: LOOPBACK_HOST, port };
+
+  const host = env.SHODAN_HOST?.trim() || LOOPBACK_HOST;
+  const token = env.SHODAN_TOKEN?.trim() || null;
+  const loopback = isLoopbackHost(host);
+
+  if (!loopback) {
+    if (!isOptIn(env.SHODAN_ALLOW_WIDER_BIND)) {
+      throw new Error(
+        `Refusing to bind to ${host}: a non-loopback bind requires the explicit ` +
+          `opt-in SHODAN_ALLOW_WIDER_BIND=1.`,
+      );
+    }
+    if (!token) {
+      throw new Error(
+        `Refusing to bind to ${host}: a non-loopback bind requires SHODAN_TOKEN ` +
+          `(no unauthenticated routable listener).`,
+      );
+    }
+  }
+
+  return { host, port, requireToken: !loopback, token };
 }
