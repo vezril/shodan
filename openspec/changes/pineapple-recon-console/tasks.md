@@ -7,7 +7,7 @@
 
 ## 2. Adapter layer & mock engine
 
-- [ ] 2.1 Define the `ReconAdapter` interface (start/stop, snapshot, event stream)
+- [x] 2.1 Define the `ReconAdapter` interface (start/stop, snapshot, event stream)
 - [ ] 2.2 Implement `MockRadioAdapter` emitting synthetic APs/clients over time
 - [ ] 2.3 Wire the daemon to serve snapshot-on-connect then deltas
 
