@@ -4,6 +4,7 @@
   "private": true,
   "description": "Self-hosted WiFi Pineapple-style recon/capture console",
   "workspaces": [
+    "contract",
     "web",
     "daemon"
   ],

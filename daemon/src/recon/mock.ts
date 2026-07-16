@@ -5,7 +5,7 @@ import type {
   Encryption,
   ReconEvent,
   Snapshot,
-} from "../contract.js";
+} from "@shodan/contract";
 import type { ReconAdapter } from "./adapter.js";
 
 // Synthetic recon source (task 2.2). Lets the whole stack run on a dev host with

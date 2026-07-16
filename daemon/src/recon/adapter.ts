@@ -1,4 +1,4 @@
-import type { ReconEvent, Snapshot } from "../contract.js";
+import type { ReconEvent, Snapshot } from "@shodan/contract";
 
 /**
  * A recon engine behind a stable interface (design D2/D3). The mock adapter
