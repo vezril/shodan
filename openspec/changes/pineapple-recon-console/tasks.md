@@ -3,7 +3,7 @@
 - [x] 1.1 Lay out `web/` (Next.js) and `daemon/` (TypeScript/Node) workspaces
 - [x] 1.2 Daemon HTTP server + WebSocket/SSE stream, bound to loopback only
 - [x] 1.3 Refuse to bind beyond loopback unless BOTH an explicit opt-in and an auth token are set
-- [ ] 1.4 Define the daemon↔UI contract: snapshot shape + incremental event shape
+- [x] 1.4 Define the daemon↔UI contract: snapshot shape + incremental event shape
 
 ## 2. Adapter layer & mock engine
 
