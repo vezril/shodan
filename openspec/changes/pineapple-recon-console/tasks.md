@@ -39,7 +39,7 @@
 
 - [x] 6.1 Persist an engagement scope (in-scope BSSIDs/SSIDs)
 - [x] 6.2 Observe-only default; recon always allowed
-- [ ] 6.3 Gate that refuses out-of-scope active operations (for future modules)
+- [x] 6.3 Gate that refuses out-of-scope active operations (for future modules)
 
 ## 7. Access modes, cockpit & docs
 
