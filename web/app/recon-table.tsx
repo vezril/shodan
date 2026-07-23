@@ -63,7 +63,7 @@ export function ReconTable() {
       <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
         <thead>
           <tr>
-            {["SSID", "BSSID", "Ch", "Band", "Encryption", "Signal", "Clients"].map((h) => (
+            {["SSID", "BSSID", "Ch", "Band", "Encryption", "Signal", "Clients", "Scope"].map((h) => (
               <th key={h} style={th}>
                 {h}
               </th>
@@ -73,7 +73,7 @@ export function ReconTable() {
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} style={{ ...td, color: "#57606a" }}>
+              <td colSpan={8} style={{ ...td, color: "#57606a" }}>
                 Waiting for recon…
               </td>
             </tr>
@@ -86,13 +86,18 @@ export function ReconTable() {
                   onClick={() => setSelected(isSelected ? null : ap.bssid)}
                   style={{ cursor: "pointer", background: isSelected ? "#ddf4ff" : undefined }}
                 >
-                  <td style={td}>{ap.ssid ?? <em style={{ color: "#57606a" }}>&lt;hidden&gt;</em>}</td>
+                  <td style={{ ...td, borderLeft: `3px solid ${ap.inScope ? "#1a7f37" : "transparent"}` }}>
+                    {ap.ssid ?? <em style={{ color: "#57606a" }}>&lt;hidden&gt;</em>}
+                  </td>
                   <td style={{ ...td, fontFamily: "ui-monospace, monospace" }}>{ap.bssid}</td>
                   <td style={td}>{ap.channel}</td>
                   <td style={td}>{ap.band}</td>
                   <td style={td}>{ap.encryption}</td>
                   <td style={tdRight}>{ap.signalDbm} dBm</td>
                   <td style={tdRight}>{ap.clientCount}</td>
+                  <td style={td}>
+                    <ScopeBadge inScope={ap.inScope} />
+                  </td>
                 </tr>
               );
             })
@@ -102,6 +107,18 @@ export function ReconTable() {
 
       {selected && <ClientPanel bssid={selected} ap={selectedAp} clients={clients} />}
     </section>
+  );
+}
+
+function ScopeBadge({ inScope }: { inScope: boolean }) {
+  return inScope ? (
+    <span style={{ padding: "1px 8px", borderRadius: 999, background: "#1a7f37", color: "#fff", fontSize: 12, fontWeight: 600 }}>
+      in scope
+    </span>
+  ) : (
+    <span style={{ padding: "1px 8px", borderRadius: 999, background: "#eaeef2", color: "#57606a", fontSize: 12 }}>
+      out
+    </span>
   );
 }
 
