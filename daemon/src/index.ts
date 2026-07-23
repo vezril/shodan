@@ -5,6 +5,7 @@
 // (tasks 1.2–1.4, 2.3). The recon source is the mock adapter for now; the
 // bettercap adapter and engine selection arrive in task 5.
 import { loadConfig } from "./config.js";
+import { selectRadioProvider } from "./radio/index.js";
 import { MockRadioAdapter } from "./recon/mock.js";
 import { createDaemonServer } from "./server.js";
 
@@ -18,7 +19,8 @@ async function main(): Promise<void> {
   const adapter = new MockRadioAdapter({ tickMs });
   await adapter.start();
 
-  const server = createDaemonServer(config, adapter);
+  const radioProvider = selectRadioProvider();
+  const server = createDaemonServer(config, adapter, radioProvider);
   server.listen(config.port, config.host, () => {
     const mode = config.requireToken
       ? "wider bind — auth token REQUIRED on every request"
