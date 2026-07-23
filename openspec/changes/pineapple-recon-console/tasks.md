@@ -47,4 +47,4 @@
 - [x] 7.2 Daemon auth token; required on every request for any non-loopback bind
 - [x] 7.3 Document each access mode, including field-audit (same-box + nearby device)
 - [x] 7.4 Update README: cockpit/engine topology, radio-pool model, access modes, run instructions
-- [ ] 7.5 End-to-end check: same-box localhost recon; and Mac → tunnel → bettercap → live recon
+- [x] 7.5 End-to-end check: same-box localhost recon; and Mac → tunnel → bettercap → live recon
