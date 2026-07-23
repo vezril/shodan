@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 
 type ConnState = "connecting" | "live" | "error";
 
-// Task 3.1: render the AP inventory from the snapshot the daemon sends on
-// connect. Applying incremental deltas in place is task 3.2 — for now a
-// reconnect re-hydrates from a fresh snapshot.
+// Renders the live AP inventory: the snapshot hydrates the table, then
+// incremental deltas are applied in place. State is keyed by BSSID so a row is
+// updated (never duplicated) on ap.upsert and dropped on ap.remove.
 export function ReconTable() {
-  const [aps, setAps] = useState<AccessPoint[]>([]);
+  const [aps, setAps] = useState<Map<string, AccessPoint>>(new Map());
   const [conn, setConn] = useState<ConnState>("connecting");
 
   useEffect(() => {
@@ -18,14 +18,31 @@ export function ReconTable() {
     source.onerror = () => setConn("error");
     source.onmessage = (event) => {
       const message = JSON.parse(event.data) as StreamMessage;
-      if (isSnapshot(message)) {
-        setAps(message.accessPoints);
-      }
+      setAps((prev) => {
+        if (isSnapshot(message)) {
+          return new Map(message.accessPoints.map((ap) => [ap.bssid, ap]));
+        }
+        switch (message.type) {
+          case "ap.upsert": {
+            const next = new Map(prev);
+            next.set(message.ap.bssid, message.ap);
+            return next;
+          }
+          case "ap.remove": {
+            const next = new Map(prev);
+            next.delete(message.bssid);
+            return next;
+          }
+          default:
+            // client.* deltas don't affect the AP table (drill-in is task 3.3).
+            return prev;
+        }
+      });
     };
     return () => source.close();
   }, []);
 
-  const rows = [...aps].sort((a, b) => b.signalDbm - a.signalDbm);
+  const rows = [...aps.values()].sort((a, b) => b.signalDbm - a.signalDbm);
 
   return (
     <section>
