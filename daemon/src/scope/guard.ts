@@ -14,6 +14,8 @@ export interface ScopeTarget {
   ssid?: string | null;
 }
 
+export type Authorization = { ok: true } | { ok: false; reason: string };
+
 const EMPTY: Scope = { bssids: [], ssids: [] };
 
 function normalize(input: Partial<Scope> | undefined): Scope {
@@ -56,5 +58,17 @@ export class ScopeGuard {
     if (bssid && this.scope.bssids.some((b) => b.toLowerCase() === bssid)) return true;
     if (target.ssid && this.scope.ssids.includes(target.ssid)) return true;
     return false;
+  }
+
+  /**
+   * Gate for active operations (capture-with-injection, deauth, AP). Refused
+   * unless the target is in scope — so with the observe-only default (empty
+   * scope) every active operation is refused. Passive recon never calls this.
+   * Future modules (later changes) call this before transmitting.
+   */
+  authorizeActive(operation: string, target: ScopeTarget): Authorization {
+    if (this.isInScope(target)) return { ok: true };
+    const label = target.ssid ?? target.bssid ?? "unknown target";
+    return { ok: false, reason: `${operation} refused: ${label} is out of scope` };
   }
 }
