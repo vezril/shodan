@@ -6,7 +6,7 @@
 // bettercap adapter and engine selection arrive in task 5.
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { loadConfig } from "./config.js";
+import { describeAccessMode, loadConfig } from "./config.js";
 import { RadioPool, selectModeApplier, selectRadioProvider } from "./radio/index.js";
 import { MockRadioAdapter } from "./recon/mock.js";
 import { ScopeGuard } from "./scope/guard.js";
@@ -31,12 +31,10 @@ async function main(): Promise<void> {
 
   const server = createDaemonServer(config, adapter, radioPool, scopeGuard);
   server.listen(config.port, config.host, () => {
-    const mode = config.requireToken
-      ? "wider bind — auth token REQUIRED on every request"
-      : "loopback only";
     console.log(
-      `shodan daemon listening on http://${config.host}:${config.port} (${mode}) — engine: ${adapter.name}`,
+      `shodan daemon listening on http://${config.host}:${config.port} — engine: ${adapter.name}`,
     );
+    console.log(`access mode: ${describeAccessMode(config)}`);
   });
 
   const shutdown = async (signal: string): Promise<void> => {

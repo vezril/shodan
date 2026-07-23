@@ -43,8 +43,8 @@
 
 ## 7. Access modes, cockpit & docs
 
-- [ ] 7.1 Support three access modes: same-box localhost, Tailscale/SSH tunnel, opt-in local-network bind
-- [ ] 7.2 Daemon auth token; required on every request for any non-loopback bind
+- [x] 7.1 Support three access modes: same-box localhost, Tailscale/SSH tunnel, opt-in local-network bind
+- [x] 7.2 Daemon auth token; required on every request for any non-loopback bind
 - [ ] 7.3 Document each access mode, including field-audit (same-box + nearby device)
 - [ ] 7.4 Update README: cockpit/engine topology, radio-pool model, access modes, run instructions
 - [ ] 7.5 End-to-end check: same-box localhost recon; and Mac → tunnel → bettercap → live recon
