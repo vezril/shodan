@@ -25,7 +25,7 @@
 - [x] 4.2 Radio-mode state machine (`IDLE`/`RECON`, reserved `CAPTURE`/`AP`)
 - [x] 4.3 Serialize transitions; refuse conflicting requests with the active mode as reason
 - [x] 4.4 Model radios as a pool; enumerate + report per-radio capabilities (monitor/inject/AP)
-- [ ] 4.5 Safe teardown: leave monitor mode / release the interface on stop/shutdown
+- [x] 4.5 Safe teardown: leave monitor mode / release the interface on stop/shutdown
 
 ## 5. bettercap recon adapter (on the T470)
 

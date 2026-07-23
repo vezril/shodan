@@ -5,7 +5,7 @@
 // (tasks 1.2–1.4, 2.3). The recon source is the mock adapter for now; the
 // bettercap adapter and engine selection arrive in task 5.
 import { loadConfig } from "./config.js";
-import { RadioPool, selectRadioProvider } from "./radio/index.js";
+import { RadioPool, selectModeApplier, selectRadioProvider } from "./radio/index.js";
 import { MockRadioAdapter } from "./recon/mock.js";
 import { createDaemonServer } from "./server.js";
 
@@ -19,7 +19,7 @@ async function main(): Promise<void> {
   const adapter = new MockRadioAdapter({ tickMs });
   await adapter.start();
 
-  const radioPool = new RadioPool(selectRadioProvider());
+  const radioPool = new RadioPool(selectRadioProvider(), selectModeApplier());
   await radioPool.init();
   const server = createDaemonServer(config, adapter, radioPool);
   server.listen(config.port, config.host, () => {
@@ -34,6 +34,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     console.log(`\n${signal} received — shutting down`);
     await adapter.stop();
+    await radioPool.releaseAll(); // safe teardown: leave monitor mode
     server.close(() => process.exit(0));
   };
   process.on("SIGINT", () => void shutdown("SIGINT"));

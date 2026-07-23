@@ -80,4 +80,9 @@ export class RadioPool {
     const controller = this.controllers.find((c) => c.id === radioId);
     if (controller) await controller.transition("IDLE");
   }
+
+  /** Safe teardown: return every radio to IDLE (leave monitor mode) on shutdown. */
+  async releaseAll(): Promise<void> {
+    await Promise.all(this.controllers.map((c) => c.transition("IDLE")));
+  }
 }
