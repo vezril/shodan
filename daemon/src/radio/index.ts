@@ -3,6 +3,7 @@ import { MockRadioProvider } from "./mock-provider.js";
 import type { RadioProvider } from "./provider.js";
 
 export type { RadioProvider } from "./provider.js";
+export { RadioPool, type ClaimResult, type RadioReport } from "./pool.js";
 export type { RadioCapabilities, RadioInfo, RadioMode } from "./types.js";
 
 // Real radios on Linux; the mock pool everywhere else (design D3: the radio
