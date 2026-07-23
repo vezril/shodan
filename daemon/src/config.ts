@@ -56,3 +56,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
 
   return { host, port, requireToken: !loopback, token };
 }
+
+// The three supported access modes map onto two binds:
+//   - loopback  → same-box (browser on the engine) OR remote over a
+//                 Tailscale/SSH tunnel that forwards to loopback
+//   - routable  → opt-in local-network bind for a nearby device, token-required
+export function describeAccessMode(config: ServerConfig): string {
+  return config.requireToken
+    ? `local-network bind on ${config.host}:${config.port} — auth token REQUIRED; reach it from a nearby device`
+    : `loopback only — same-box (http://127.0.0.1:${config.port}) or via a Tailscale/SSH tunnel`;
+}
