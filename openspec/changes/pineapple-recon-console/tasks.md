@@ -21,7 +21,7 @@
 
 ## 4. Radio control
 
-- [ ] 4.1 Enumerate interfaces; report MK7AC chipset/driver + monitor availability
+- [x] 4.1 Enumerate interfaces; report MK7AC chipset/driver + monitor availability
 - [ ] 4.2 Radio-mode state machine (`IDLE`/`RECON`, reserved `CAPTURE`/`AP`)
 - [ ] 4.3 Serialize transitions; refuse conflicting requests with the active mode as reason
 - [ ] 4.4 Model radios as a pool; enumerate + report per-radio capabilities (monitor/inject/AP)
