@@ -4,9 +4,12 @@
 // /api/stream that serves a snapshot on connect then forwards recon deltas
 // (tasks 1.2–1.4, 2.3). The recon source is the mock adapter for now; the
 // bettercap adapter and engine selection arrive in task 5.
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { loadConfig } from "./config.js";
 import { RadioPool, selectModeApplier, selectRadioProvider } from "./radio/index.js";
 import { MockRadioAdapter } from "./recon/mock.js";
+import { ScopeGuard } from "./scope/guard.js";
 import { createDaemonServer } from "./server.js";
 
 async function main(): Promise<void> {
@@ -21,7 +24,12 @@ async function main(): Promise<void> {
 
   const radioPool = new RadioPool(selectRadioProvider(), selectModeApplier());
   await radioPool.init();
-  const server = createDaemonServer(config, adapter, radioPool);
+
+  const scopeFile = process.env.SHODAN_SCOPE_FILE ?? join(homedir(), ".shodan", "scope.json");
+  const scopeGuard = new ScopeGuard(scopeFile);
+  await scopeGuard.load();
+
+  const server = createDaemonServer(config, adapter, radioPool, scopeGuard);
   server.listen(config.port, config.host, () => {
     const mode = config.requireToken
       ? "wider bind — auth token REQUIRED on every request"

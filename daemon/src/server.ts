@@ -9,6 +9,7 @@ import type { ServerConfig } from "./config.js";
 import type { StreamMessage } from "@shodan/contract";
 import type { RadioPool } from "./radio/index.js";
 import type { ReconAdapter } from "./recon/adapter.js";
+import type { Scope, ScopeGuard } from "./scope/guard.js";
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
@@ -34,6 +35,18 @@ function isAuthorized(req: IncomingMessage, token: string): boolean {
 
 function writeSse(res: ServerResponse, message: StreamMessage): void {
   res.write(`data: ${JSON.stringify(message)}\n\n`);
+}
+
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+      if (data.length > 1_000_000) reject(new Error("body too large"));
+    });
+    req.on("end", () => resolve(data));
+    req.on("error", reject);
+  });
 }
 
 // Live recon stream: send the snapshot on connect, then forward the adapter's
@@ -71,6 +84,7 @@ export function createDaemonServer(
   config: ServerConfig,
   adapter: ReconAdapter,
   radioPool: RadioPool,
+  scopeGuard: ScopeGuard,
 ): Server {
   return createServer((req, res) => {
     // On a wider bind, every request must present the token.
@@ -88,6 +102,31 @@ export function createDaemonServer(
 
     if (req.method === "GET" && pathname === "/api/radios") {
       sendJson(res, 200, { radios: radioPool.list() });
+      return;
+    }
+
+    if (req.method === "GET" && pathname === "/api/scope") {
+      sendJson(res, 200, { scope: scopeGuard.getScope() });
+      return;
+    }
+
+    if (req.method === "PUT" && pathname === "/api/scope") {
+      readBody(req).then(
+        (body) => {
+          let parsed: unknown;
+          try {
+            parsed = body ? JSON.parse(body) : {};
+          } catch {
+            sendJson(res, 400, { error: "invalid_json" });
+            return;
+          }
+          scopeGuard.setScope(parsed as Partial<Scope>).then(
+            (scope) => sendJson(res, 200, { scope }),
+            () => sendJson(res, 500, { error: "persist_failed" }),
+          );
+        },
+        () => sendJson(res, 400, { error: "read_failed" }),
+      );
       return;
     }
 
