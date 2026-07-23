@@ -37,6 +37,22 @@ function writeSse(res: ServerResponse, message: StreamMessage): void {
   res.write(`data: ${JSON.stringify(message)}\n\n`);
 }
 
+// Stamp inScope on APs from the scope guard at send time. Recon observes every
+// AP regardless of scope (observe-only default); the guard only decides how each
+// AP is labelled. The radio itself never knows scope — the daemon stamps it.
+function stampScope(message: StreamMessage, scopeGuard: ScopeGuard): StreamMessage {
+  if (message.type === "snapshot") {
+    return {
+      ...message,
+      accessPoints: message.accessPoints.map((ap) => ({ ...ap, inScope: scopeGuard.isInScope(ap) })),
+    };
+  }
+  if (message.type === "ap.upsert") {
+    return { ...message, ap: { ...message.ap, inScope: scopeGuard.isInScope(message.ap) } };
+  }
+  return message;
+}
+
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -55,6 +71,7 @@ function openSseStream(
   req: IncomingMessage,
   res: ServerResponse,
   adapter: ReconAdapter,
+  scopeGuard: ScopeGuard,
 ): void {
   res.writeHead(200, {
     "content-type": "text/event-stream",
@@ -63,9 +80,10 @@ function openSseStream(
   });
   res.write(": connected\n\n");
 
-  // Snapshot first, then deltas (recon-dashboard "snapshot on connect").
-  writeSse(res, adapter.snapshot());
-  const unsubscribe = adapter.subscribe((event) => writeSse(res, event));
+  // Snapshot first, then deltas (recon-dashboard "snapshot on connect"). Each
+  // message is scope-stamped at send time.
+  writeSse(res, stampScope(adapter.snapshot(), scopeGuard));
+  const unsubscribe = adapter.subscribe((event) => writeSse(res, stampScope(event, scopeGuard)));
 
   const heartbeat = setInterval(() => {
     res.write(": heartbeat\n\n");
@@ -131,7 +149,7 @@ export function createDaemonServer(
     }
 
     if (req.method === "GET" && pathname === "/api/stream") {
-      openSseStream(req, res, adapter);
+      openSseStream(req, res, adapter, scopeGuard);
       return;
     }
 
