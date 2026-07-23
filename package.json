@@ -12,9 +12,13 @@
     "node": ">=22"
   },
   "scripts": {
+    "dev": "concurrently -n daemon,web -c blue,green \"npm:dev:daemon\" \"npm:dev:web\"",
     "dev:web": "npm run dev -w @shodan/web",
     "dev:daemon": "npm run dev -w @shodan/daemon",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
   }
 }
