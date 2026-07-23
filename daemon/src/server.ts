@@ -7,7 +7,7 @@ import {
 } from "node:http";
 import type { ServerConfig } from "./config.js";
 import type { StreamMessage } from "@shodan/contract";
-import type { RadioProvider } from "./radio/index.js";
+import type { RadioPool } from "./radio/index.js";
 import type { ReconAdapter } from "./recon/adapter.js";
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
@@ -70,7 +70,7 @@ function openSseStream(
 export function createDaemonServer(
   config: ServerConfig,
   adapter: ReconAdapter,
-  radioProvider: RadioProvider,
+  radioPool: RadioPool,
 ): Server {
   return createServer((req, res) => {
     // On a wider bind, every request must present the token.
@@ -87,10 +87,7 @@ export function createDaemonServer(
     }
 
     if (req.method === "GET" && pathname === "/api/radios") {
-      radioProvider.enumerate().then(
-        (radios) => sendJson(res, 200, { provider: radioProvider.name, radios }),
-        () => sendJson(res, 500, { error: "enumerate_failed" }),
-      );
+      sendJson(res, 200, { radios: radioPool.list() });
       return;
     }
 
