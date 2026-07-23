@@ -52,6 +52,48 @@ Useful env vars:
 
 Type-check everything with `npm run typecheck`.
 
+## Access modes
+
+The daemon runs as root and controls radios, so it binds to **loopback by
+default** and never sits unauthenticated on a network. Three ways to reach it:
+
+- **Same-box (localhost)** — browser on the engine; the default, and the simplest
+  field-audit setup.
+- **Tailscale / SSH tunnel** — remote from your Mac; the daemon stays on loopback
+  and the tunnel forwards to it.
+- **Opt-in local-network bind** — a nearby phone/tablet at a site with no tailnet;
+  requires `SHODAN_ALLOW_WIDER_BIND=1` **and** `SHODAN_TOKEN`, and every request
+  must carry the token.
+
+Full details, commands, and env vars: **[docs/access-modes.md](docs/access-modes.md)**.
+
+## Radio model
+
+The daemon models radios as a **pool** (design D4/D8). Each radio has one active
+mode — `IDLE`, `RECON`, and reserved `CAPTURE`/`AP` — and modes are exclusive
+*per radio*, so conflicting modes run on different cards concurrently (enough for
+evil twin with two radios). Enumeration reports each radio's driver and
+monitor/injection/AP capabilities. On Linux this is real (`iw`); on macOS a
+representative mock pool stands in.
+
+## Scope
+
+An **engagement scope** (allowlist of in-scope BSSIDs/SSIDs) marks the operator's
+own lab. Recon is **observe-only** — every AP is shown regardless of scope — but
+the daemon stamps `inScope` on each AP so the cockpit can distinguish them, and
+any future active operation (capture/deauth/AP) is refused unless its target is in
+scope. Scope is persisted (`SHODAN_SCOPE_FILE`) and survives restarts.
+
+## HTTP API
+
+| Method / path | Purpose |
+|---|---|
+| `GET /health` | liveness |
+| `GET /api/stream` | SSE: snapshot on connect, then recon deltas |
+| `GET /api/radios` | radio pool: capabilities + current mode |
+| `GET /api/scope` | current engagement scope |
+| `PUT /api/scope` | set + persist the engagement scope |
+
 ## License
 
 MIT — see [LICENSE.md](LICENSE.md).
